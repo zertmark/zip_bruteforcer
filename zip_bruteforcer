@@ -1,0 +1,79 @@
+#!/bin/python3 
+import threading
+import time
+from tkinter import ttk
+from tkinter.ttk import Progressbar
+from tkinter import filedialog
+import tkinter 
+from tkinter import *
+from tkinter import messagebox
+import sys
+import os
+import zipfile 
+def create_window():
+ global window,progress
+ window=Tk()
+ window.title("ZIP Cracker by Zert")
+ window.geometry('400x250')
+ window.config(bg='gray') 
+ lbl = Label(window, text="ZIP Cracker", font=("Arial Bold Italic", 10),bg='gray')
+ lbl.place(x=170,y=1)
+ btn_zip=Button(window,text='Select zip file',width=30,height=2,command=select_zip)
+ btn_zip.place(x=70,y=20)
+ btn_crack = Button(window, text="Crack",width=30,height=2,command=start_cracking)
+ btn_crack.place(x=70,y=80)
+ style = ttk.Style()
+ style.theme_use('default')
+ style.configure("green.Horizontal.TProgressbar", background='green')
+ progress = Progressbar(window, length=200,style='green.Horizontal.TProgressbar')
+ progress['value']=0
+ progress.place(x=100,y=200)
+ window.resizable(False,False)
+ window.mainloop()
+def main():
+ create_window()
+def select_zip():
+ global zip
+ zip_path=filedialog.askopenfilename(title="Select zip file to crack",filetypes = (("Zip file","*.zip"),("all files","*.*")))
+ if zip_path !="":
+  zip=zipfile.ZipFile(zip_path)
+ else:
+  messagebox.showrerror("Error","Empty path to zip file")
+def get_lines():
+ global words_path,lines
+ words_path = filedialog.askopenfilename(title="Select file with passwords",filetypes = (("Dictionary (txt)","*.txt"),("all files","*.*")))
+ lines=0
+ if words_path != "":
+  try:
+   with open (words_path,'r',encoding='utf-8', errors='ignore') as file:
+    for ic in file.readlines():
+     lines+=1
+  except:
+   messagebox.showerror("Error","Error while reading file(try another wordlist)") 
+  messagebox.showinfo('Wordlist info','Found {} passwords'.format(str(lines)))
+  progress.configure(maximum=lines)
+ else:
+  messagebox.showerror("Error","Empty path to wordlist")
+def start_cracking():
+ get_lines()
+ thread=threading.Thread(target=crack)
+ thread.start()
+def crack():
+ progress['value']=0
+ count=0
+ with open (words_path,'r',encoding='utf-8', errors='ignore') as passwords:
+  for password in passwords.readlines():
+   count+=1
+   progress['value']=count
+   try:
+    zip.extractall(pwd=password.strip().encode('utf-8'))
+    messagebox.showinfo("Password Found!",'Password:{}'.format(password.strip()))
+    progress['value']=lines
+    break 
+   except:
+    pass
+   if count==lines:
+    messagebox.showerror("Password Not found!",'Try new wordlist!')
+    break    
+  exit()
+main()
